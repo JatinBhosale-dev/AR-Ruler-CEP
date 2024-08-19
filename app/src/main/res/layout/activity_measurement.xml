@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Measurement">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <fragment
+            android:id="@+id/sceneform_fragment"
+            android:name="com.google.ar.sceneform.ux.ArFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+
+        <ImageView
+            android:id="@+id/clearButton"
+            android:layout_width="@dimen/button_size"
+            android:layout_height="@dimen/button_size"
+            android:layout_marginHorizontal="@dimen/margin_buttons"
+            android:layout_marginBottom="@dimen/margin_bottom"
+            android:padding="@dimen/button_icon_margin"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:background="@drawable/bg_buttons"
+            android:contentDescription="@string/clear"
+            android:src="@drawable/clear_all"
+            app:tint="@color/button_icon_color" />
+
+
+        <ImageView
+            android:id="@+id/dockButton"
+            android:layout_width="@dimen/button_size"
+            android:layout_height="@dimen/button_size"
+            android:layout_marginHorizontal="@dimen/margin_buttons"
+            android:layout_marginBottom="@dimen/margin_bottom"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:background="@drawable/bg_buttons"
+            android:contentDescription="@string/dock_anchor"
+            android:src="@drawable/dock_anchor_icon"
+            android:padding="@dimen/button_icon_margin"
+            app:layout_constraintEnd_toStartOf="@+id/lockButton"
+            app:layout_constraintStart_toEndOf="@+id/clearButton"
+            app:tint="@color/button_icon_color" />
+
+        <ImageView
+            android:id="@+id/lockButton"
+            android:layout_width="@dimen/button_size"
+            android:layout_height="@dimen/button_size"
+            android:layout_marginHorizontal="@dimen/margin_buttons"
+            android:layout_marginBottom="@dimen/margin_bottom"
+            android:padding="@dimen/button_icon_margin"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:background="@drawable/bg_buttons"
+            android:contentDescription="@string/lock_anchor"
+            android:src="@drawable/lock_anchor_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:tint="@color/button_icon_color" />
+
+
+
+            <TextView
+                android:id="@+id/distanceMeter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAlignment="center"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:layout_marginBottom="20dp"
+                app:layout_constraintBottom_toTopOf="@+id/dockButton"/>
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,4 +1,4 @@
-package com.kwansolabs.klar
+package com.kwansolabs.ar_rulerapp
 
 import org.junit.Test
 

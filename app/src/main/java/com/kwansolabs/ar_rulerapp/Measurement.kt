@@ -1,11 +1,17 @@
-package com.kwansolabs.klar
+package com.kwansolabs.ar_rulerapp
+
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.AdapterView
+import android.widget.AdapterView.OnItemSelectedListener
+import android.widget.ArrayAdapter
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.ar.core.Anchor
@@ -31,11 +37,14 @@ import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.ShapeFactory
 import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.ArFragment
+import com.kwansolabs.klar.R
 import kotlin.math.sqrt
 
 
-class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickListener {
-    private var arFragment: ArFragment? = null
+class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickListener,OnItemSelectedListener {
+    private lateinit var arFragment: ArFragment
+    private lateinit var unitDropDown: Spinner
+    private val units: Array<String> = arrayOf(UNIT_CENTIMETER, UNIT_METER, UNIT_FEET, UNIT_INCHES)
     private val cursorAnchor = mutableListOf<WrappedAnchor>()
     private lateinit var dockedAnchor: WrappedAnchor
     private var anchorRenderer: ModelRenderable? = null
@@ -53,20 +62,33 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
     var cp2: Float =0f
     var freezeAnchors = false
     var distanceCardViewRenderer: ViewRenderable? = null
-    var distanceInCentimeters = ""
+    private var distanceWithUnits = ""
+    private var distanceInMeters = 0f
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_measurement)
-        arFragment = supportFragmentManager.findFragmentById(R.id.sceneform_fragment) as ArFragment?
-        arFragment?.planeDiscoveryController?.hide()
-        arFragment?.planeDiscoveryController?.setInstructionView(null)
-        arFragment?.arSceneView?.scene?.addOnUpdateListener(this)
+        arFragment = supportFragmentManager.findFragmentById(R.id.sceneform_fragment) as ArFragment
+        arFragment.planeDiscoveryController?.hide()
+        arFragment.planeDiscoveryController?.setInstructionView(null)
+        arFragment.arSceneView?.scene?.addOnUpdateListener(this)
        // arFragment?.arSceneView?.planeRenderer?.isVisible = false
         findViewById<ImageView>(R.id.dockButton)?.setOnClickListener(this)
         findViewById<ImageView>(R.id.lockButton)?.setOnClickListener(this)
         findViewById<ImageView>(R.id.clearButton)?.setOnClickListener(this)
         cp1 = this.resources.displayMetrics.widthPixels.toFloat()/2
         cp2 = this.resources.displayMetrics.heightPixels.toFloat()/2
+
+
+
+        unitDropDown = findViewById(R.id.unit_selector)!!
+        val adapter: ArrayAdapter<String> = ArrayAdapter<String>(this,
+            R.layout.spinner_main, units
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        unitDropDown.setAdapter(adapter)
+        unitDropDown.onItemSelectedListener = this
+
+
 
         findViewById<ImageView>(R.id.lockButton).isEnabled = false
         findViewById<ImageView>(R.id.lockButton).setBackgroundResource(R.drawable.bg_button_disable)
@@ -136,7 +158,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
     override fun onUpdate(p0: FrameTime?) {
         System.gc()
         runOnUiThread {
-            frame = arFragment?.arSceneView?.session?.update()!!
+            frame = arFragment.arSceneView?.session?.update()!!
             if (!freezeAnchors && frame.camera.trackingState == TrackingState.TRACKING) {
 
                 hitResultList = frame.hitTest(cp1, cp2)
@@ -157,7 +179,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
                     if (cursorAnchor.size >= 1) {
                         //cursorAnchor[0].anchor.detach()
                         cursorAnchor.removeAt(0)
-                        arFragment!!.arSceneView.scene.removeChild(anchorNode)
+                        arFragment.arSceneView.scene.removeChild(anchorNode)
                     }
                     try {
                         cursorAnchor.add(
@@ -172,7 +194,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
 
                     anchorNode = AnchorNode(cursorAnchor[0].anchor)
                     anchorNode.renderable = anchorRenderer
-                    anchorNode.setParent(arFragment!!.arSceneView.scene)
+                    anchorNode.setParent(arFragment.arSceneView.scene)
                     Log.e("HitResultList", anchorNode.anchor?.pose.toString())
 
 
@@ -204,21 +226,14 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
                                 lineNode.worldRotation = rotationFromAToB
 
                                 try {
-                                    Log.e(
-                                        "Distance :",
-                                        computeDistance(
-                                            dockedAnchor.anchor,
-                                            cursorAnchor[0].anchor
-                                        )
-                                    )
                                     if (::dockedAnchor.isInitialized) {
-                                        distanceInCentimeters = computeDistance(
+                                        distanceInMeters = computeDistance(
                                             dockedAnchor.anchor,
                                             cursorAnchor[0].anchor
                                         )
+                                        distanceWithUnits = convertUnits(distanceInMeters)
                                         findViewById<TextView>(R.id.distanceMeter).text =
-                                            distanceInCentimeters
-
+                                            distanceWithUnits
                                     }
 
 
@@ -231,11 +246,11 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
                     if (cursorAnchor.size >= 1) {
                         //cursorAnchor[0].anchor.detach()
                         cursorAnchor.removeAt(0)
-                        arFragment!!.arSceneView.scene.removeChild(anchorNode)
+                        arFragment.arSceneView.scene.removeChild(anchorNode)
                     }
                     cursorAnchor.add(
                         WrappedAnchor(
-                            arFragment?.arSceneView?.session!!.createAnchor(
+                            arFragment.arSceneView?.session!!.createAnchor(
                                 frame.getCamera().getPose()
                                     .compose(Pose.makeTranslation(0f, 0f, -1f))
                                     .extractTranslation()
@@ -246,7 +261,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
 
                     anchorNode = AnchorNode(cursorAnchor[0].anchor)
                     anchorNode.renderable = cursorRenderer
-                    anchorNode.setParent(arFragment!!.arSceneView.scene)
+                    anchorNode.setParent(arFragment.arSceneView.scene)
                 }
             }
             else if(freezeAnchors)
@@ -255,14 +270,14 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
                 if (textNode==null) {
                     Log.e("Anchor Pose",anchorNode.anchor!!.pose.toString())
                     val distanceAnchorPose = anchorNode.anchor!!.pose
-                    textNode = AnchorNode(arFragment?.arSceneView?.session!!.createAnchor(
+                    textNode = AnchorNode(arFragment.arSceneView?.session!!.createAnchor(
                         distanceAnchorPose
                                 .compose(Pose.makeRotation(0f, distanceAnchorPose.qy(), distanceAnchorPose.qz(),distanceAnchorPose.qw()))
                             .extractTranslation()
                     ))
                     textNode!!.renderable = distanceCardViewRenderer
-                    textNode!!.setParent(arFragment!!.arSceneView.scene)
-                    (distanceCardViewRenderer!!.view).findViewById<TextView>(R.id.pointCard).text = distanceInCentimeters
+                    textNode!!.setParent(arFragment.arSceneView.scene)
+                    (distanceCardViewRenderer!!.view).findViewById<TextView>(R.id.pointCard).text = distanceWithUnits.plus(unitDropDown.selectedItem)
                 }
 
                 /**** for text in ar ****/
@@ -270,7 +285,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
         }
     }
 
-    private fun computeDistance(anchor1: Anchor,anchor2: Anchor):String
+    private fun computeDistance(anchor1: Anchor,anchor2: Anchor):Float
     {
         val dx: Float = anchor1.pose.tx() - anchor2.pose.tx()
         val dy: Float = anchor1.pose.ty() - anchor2.pose.ty()
@@ -278,7 +293,28 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
         val distanceMeters =
             sqrt((dx * dx + dy * dy + dz * dz).toDouble()).toFloat()
 
-        return ((distanceMeters*100).toString()+" cm")
+        return distanceMeters
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun convertUnits(distanceMeters: Float):String
+    {
+        when (unitDropDown.selectedItem) {
+            UNIT_CENTIMETER -> {
+                return String.format("%.2f", (distanceMeters*100))
+            }
+            UNIT_METER -> {
+                return String.format("%.2f",(distanceMeters))
+            }
+            UNIT_FEET -> {
+                return String.format("%.2f",(distanceMeters * 3.280))
+            }
+            UNIT_INCHES -> {
+                return String.format("%.2f",(distanceMeters*39.26))
+            }
+        }
+
+        return "Error while converting units"
     }
 
     private fun calculateDistanceToPlane(planePose: Pose, cameraPose: Pose): Float {
@@ -297,16 +333,17 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
     )
 
     override fun onClick(v: View?) {
-        if (v?.id == R.id.dockButton) {
+        if (v?.id == R.id.dockButton && firstHitResult!=null) {
             if (dockedAnchorNode!=null) {
-                arFragment!!.arSceneView.scene.removeChild(dockedAnchorNode)
+                arFragment.arSceneView.scene.removeChild(dockedAnchorNode)
             }
             dockedAnchor = cursorAnchor[0]
             dockedAnchorNode = AnchorNode(cursorAnchor[0].anchor)
             dockedAnchorNode!!.renderable = anchorRenderer
-            dockedAnchorNode!!.setParent(arFragment!!.arSceneView.scene)
+            dockedAnchorNode!!.setParent(arFragment.arSceneView.scene)
             findViewById<ImageView>(R.id.lockButton).isEnabled = true
             findViewById<ImageView>(R.id.lockButton).setBackgroundResource(R.drawable.bg_buttons)
+            findViewById<LinearLayout>(R.id.distanceLabel).visibility = View.VISIBLE
         }
         if (v?.id == R.id.lockButton) {
           freezeAnchors=true
@@ -318,8 +355,8 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
         if (v?.id == R.id.clearButton) {
             freezeAnchors = false
             if (dockedAnchorNode!=null) {
-                arFragment!!.arSceneView.scene.removeChild(dockedAnchorNode)
-                if(textNode!=null) arFragment!!.arSceneView.scene.removeChild(textNode)
+                arFragment.arSceneView.scene.removeChild(dockedAnchorNode)
+                if(textNode!=null) arFragment.arSceneView.scene.removeChild(textNode)
                 dockedAnchorNode = null
                 textNode = null
             }
@@ -327,7 +364,30 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener,View.OnClickList
             findViewById<ImageView>(R.id.lockButton).setBackgroundResource(R.drawable.bg_button_disable)
             findViewById<ImageView>(R.id.dockButton).isEnabled = true
             findViewById<ImageView>(R.id.dockButton).setBackgroundResource(R.drawable.bg_buttons)
+            distanceInMeters = 0f
+            distanceWithUnits = ""
+            findViewById<LinearLayout>(R.id.distanceLabel).visibility = View.GONE
         }
+    }
+
+    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+        if(distanceInMeters>0f) {
+            distanceWithUnits = convertUnits(distanceInMeters)
+                findViewById<TextView>(R.id.distanceMeter).text =
+                    distanceWithUnits
+            if(freezeAnchors)
+            {
+                (distanceCardViewRenderer!!.view).findViewById<TextView>(R.id.pointCard).text = distanceWithUnits.plus(unitDropDown.selectedItem)
+            }
+        }
+    }
+
+    override fun onNothingSelected(parent: AdapterView<*>?) {
+
+        /**
+         * Nothing to implement
+         */
+
     }
 
 

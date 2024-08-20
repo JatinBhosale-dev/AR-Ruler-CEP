@@ -1,4 +1,4 @@
-package com.kwansolabs.klar
+package com.kwansolabs.ar_rulerapp
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

@@ -40,4 +40,8 @@ ARCore is a software development kit (SDK) developed by Google that allows devel
  the Circle(2D) will prompt to drop the anchor. Once we drop the second anchor aswell we compute distance between them.
 
 ## 🗒️ Credits
-yet to mention
+Apeksha Chavan
+Shubhangi Karad
+Parth Chaudhari
+Jatin Bhosale
+

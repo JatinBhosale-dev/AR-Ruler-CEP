@@ -1,5 +1,5 @@
 <h1 align="center">
-  KLAR Ruler App
+  AR Ruler App
 </h1>
 
 # What is the idea?
@@ -17,7 +17,7 @@ ARCore is a software development kit (SDK) developed by Google that allows devel
 # 🚀  Prerequisites
   **ARCore supported Android Device**
 
-🎯**KLAR Ruler App Usage**
+🎯**AR Ruler App Usage**
 
 - Move your device inorder to detect a Plane or Depth Point correctly.
 - Upon recognizing that the cursor which was a sphere(3D) is now a circle(2D) press the anchor button to drop and anchor.
@@ -44,4 +44,5 @@ Apeksha Chavan
 Shubhangi Karad
 Parth Chaudhari
 Jatin Bhosale
+
 
